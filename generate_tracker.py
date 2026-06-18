@@ -418,40 +418,47 @@ def merge_data_from_tracker(
 # SUMMARY AND COMMENTS ENRICHMENT
 # ─────────────────────────────────────────────────────────────────────────────
 
-def enrich_summary_and_comments(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Prefix 'Summary Update' with the 'Last Updated Date' month/day (e.g. 'Jan 11: ...'),
-    and prefix 'Comments' with today's date (e.g. 'Jun - 18: \\n'), appending any
-    existing comment text carried forward from the previous tracker after a newline.
-    """
-    df = df.copy()
+def _add_last_updated_prefix_to_summary(df: pd.DataFrame) -> pd.DataFrame:
+    """Prefix 'Summary Update' with its 'Last Updated Date' month/day (e.g. 'Jan 11: ...')."""
+    if "Summary Update" not in df.columns or "Last Updated Date" not in df.columns:
+        return df
+
+    def _format_summary(row):
+        summary = str(row["Summary Update"]) if pd.notna(row["Summary Update"]) else ""
+        last_updated = row["Last Updated Date"]
+        if pd.isna(last_updated) or str(last_updated).strip() in ("", "nan", "NaT"):
+            return summary
+        try:
+            dt = pd.to_datetime(last_updated)
+            date_prefix = dt.strftime("%b %d")
+        except Exception:
+            date_prefix = str(last_updated).strip()
+        return f"{date_prefix}: {summary}" if summary else f"{date_prefix}: "
+
+    df["Summary Update"] = df.apply(_format_summary, axis=1)
+    return df
+
+
+def _add_today_prefix_to_comments(df: pd.DataFrame) -> pd.DataFrame:
+    """Prefix 'Comments' with today's date (e.g. 'Jun - 18: \\n'), appending any existing text after a newline."""
+    if "Comments" not in df.columns:
+        return df
+
     today_prefix = date.today().strftime("%b - %d: ")
+    existing = df["Comments"].apply(
+        lambda c: str(c).strip() if pd.notna(c) and str(c).strip() not in ("", "nan") else ""
+    )
+    df["Comments"] = existing.apply(
+        lambda c: f"{today_prefix}\n{c}" if c else f"{today_prefix}\n"
+    )
+    return df
 
-    # Prefix Summary Update with Last Updated Date month and day
-    if "Summary Update" in df.columns and "Last Updated Date" in df.columns:
-        def _format_summary(row):
-            summary = str(row["Summary Update"]) if pd.notna(row["Summary Update"]) else ""
-            last_updated = row["Last Updated Date"]
-            if pd.isna(last_updated) or str(last_updated).strip() in ("", "nan", "NaT"):
-                return summary
-            try:
-                dt = pd.to_datetime(last_updated)
-                date_prefix = dt.strftime("%b %d")
-            except Exception:
-                date_prefix = str(last_updated).strip()
-            return f"{date_prefix}: {summary}" if summary else f"{date_prefix}: "
 
-        df["Summary Update"] = df.apply(_format_summary, axis=1)
-
-    # Prefix Comments with today's date; append old comments after a newline
-    if "Comments" in df.columns:
-        existing = df["Comments"].apply(
-            lambda c: str(c).strip() if pd.notna(c) and str(c).strip() not in ("", "nan") else ""
-        )
-        df["Comments"] = existing.apply(
-            lambda c: f"{today_prefix}\n{c}" if c else f"{today_prefix}\n"
-        )
-
+def enrich_summary_and_comments(df: pd.DataFrame) -> pd.DataFrame:
+    """Apply summary-update and comments date enrichment to the discussion-needed dataset."""
+    df = df.copy()
+    df = _add_last_updated_prefix_to_summary(df)
+    df = _add_today_prefix_to_comments(df)
     return df
 
 # ─────────────────────────────────────────────────────────────────────────────
