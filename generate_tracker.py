@@ -127,6 +127,7 @@ MAPS_RENAME = {
 # Ordered columns in the "Issues and MAPs" output sheet.
 # "Comments", "If MAP is Past Due, ETA?", and "hash" are added by the script.
 ISSUES_AND_MAPS_COLUMNS = [
+    "Hash",
     "Issue MC-1",
     "Issue MC-2",
     "Issue ID",
@@ -144,14 +145,19 @@ ISSUES_AND_MAPS_COLUMNS = [
     "MAP opened date",
     "MAP Due Date",
     "AP Status",
-    "Summary Update",
-    "Comments",
-    "If MAP is Past Due, ETA?",
     "Enterprise Risk Severity Rating",
     "Last Updated Date",
     "# Days to MAP Due Date",
-    "hash",
+    "Summary Update",
+    "Comments",
+    "If MAP is Past Due, ETA?",
 ]
+
+# Issue Status values that indicate a discussion is needed
+ISSUE_STATUSES_INCLUDE = {"open", "past due", "past due - pending map owner approval", "past due - pending aso approval"}
+
+# MAP Status values that indicate no discussion is needed
+MAP_STATUSES_EXCLUDE = {"cancelled", "draft", "completed", "draft", "map cancelled", "draft - pending approvals", "map cancellation pending aso approval"}
 
 # Columns shown on the "MAPs Compliance Sheet"
 COMPLIANCE_DISPLAY_COLUMNS = [
@@ -166,8 +172,6 @@ COMPLIANCE_DISPLAY_COLUMNS = [
     "Days Since Update",
     "Cadence Days",
     "Compliance Result",
-    "Comments",
-    "If MAP is Past Due, ETA?",
 ]
 
 # Date columns — formatted as MM/DD/YYYY in the output sheets
@@ -300,6 +304,41 @@ def save_debug_snapshot(df: pd.DataFrame, path: str) -> None:
     """Write the full merged dataset to an Excel file for manual spot-checking."""
     df.to_excel(path, index=False)
     print(f"  Debug snapshot saved → {Path(path).resolve()}")
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DISCUSSION-NEEDED FILTER
+# ─────────────────────────────────────────────────────────────────────────────
+
+def filter_discussion_needed(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Return only rows that need active discussion — i.e. where both the Issue
+    Status and the MAP Status indicate in-flight work.
+
+    Excluded (→ N) when either column is blank-like (NaN / empty string / 0)
+    or matches a terminal status:
+      Issue Status : closed, cancelled
+      MAP Status   : cancelled, completed, draft
+    """
+    issue_status = df["Issue Status"]
+    issue_active = (
+        ~issue_status.isna() # not null
+        & (issue_status.astype(str).str.strip() != "") # not empty
+        & (issue_status != 0) # not blank/zero
+        & issue_status.astype(str).str.strip().str.lower().isin(ISSUE_STATUSES_INCLUDE) # has these statuses
+    )
+
+    map_status = df["MAP Status"]
+    map_active = (
+        ~map_status.isna() # not null
+        & (map_status.astype(str).str.strip() != "") # not empty
+        & (map_status != 0) # not blank/zero
+        & ~map_status.astype(str).str.strip().str.lower().isin(MAP_STATUSES_EXCLUDE) # not these statuses
+    )
+
+    result = df[issue_active & map_active].copy().reset_index(drop=True)
+    excluded = len(df) - len(result)
+    print(f"  Discussion-needed filter: {len(result):,} rows kept, {excluded:,} excluded")
+    return result
 
 # ─────────────────────────────────────────────────────────────────────────────
 # BUSINESS-UNIT FILTERING
@@ -619,7 +658,11 @@ def main() -> None:
         save_debug_snapshot(all_issues_and_maps, DEBUG_SNAPSHOT_PATH)
         print("  Review this file to confirm columns are correct and there are no duplicate MAP IDs.")
 
-    # 5. Generate one workbook per business unit
+    # 5. Filter to rows that need active discussion (open issues + active MAPs)
+    print("\nFiltering for open, past-due issues and maps with discussion needed...")
+    all_issues_and_maps_with_discussion_needed = filter_discussion_needed(all_issues_and_maps)
+
+    # 6. Generate one workbook per business unit
     print(f"\nProcessing {len(BUSINESS_UNITS)} business unit(s)...\n")
     for bu_config in BUSINESS_UNITS:
         bu_name = bu_config["business_unit_name"]
@@ -630,7 +673,7 @@ def main() -> None:
         print(f"{'─' * 55}")
         print(f"  [{bu_name}]")
 
-        bu_data = filter_by_business_unit(all_issues_and_maps, col_to_search, leader_names)
+        bu_data = filter_by_business_unit(all_issues_and_maps_with_discussion_needed, col_to_search, leader_names)
         if bu_data.empty:
             print(f"  SKIP: no data found for '{bu_name}' — check business_leader_names and col_to_search.")
             continue
