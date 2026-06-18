@@ -423,19 +423,9 @@ def _add_last_updated_prefix_to_summary(df: pd.DataFrame) -> pd.DataFrame:
     if "Summary Update" not in df.columns or "Last Updated Date" not in df.columns:
         return df
 
-    def _format_summary(row):
-        summary = str(row["Summary Update"]) if pd.notna(row["Summary Update"]) else ""
-        last_updated = row["Last Updated Date"]
-        if pd.isna(last_updated) or str(last_updated).strip() in ("", "nan", "NaT"):
-            return summary
-        try:
-            dt = pd.to_datetime(last_updated)
-            date_prefix = dt.strftime("%b %d")
-        except Exception:
-            date_prefix = str(last_updated).strip()
-        return f"{date_prefix}: {summary}" if summary else f"{date_prefix}: "
-
-    df["Summary Update"] = df.apply(_format_summary, axis=1)
+    summary = df["Summary Update"].apply(lambda v: str(v) if pd.notna(v) else "")
+    date_prefix = pd.to_datetime(df["Last Updated Date"], errors="coerce").dt.strftime("%b %d").fillna("")
+    df["Summary Update"] = (date_prefix + ": " + summary).str.lstrip(": ")
     return df
 
 
