@@ -37,7 +37,12 @@ BASE_DIR = f"C:/Users/{username}/Downloads"
 # Path to the source workbook (daily-updated)
 SOURCE_FILE = f"{BASE_DIR}/FIG Issue Management Model (repaired_2).xlsx"
 
-INPUT_FILE = "DPS-EPS - Issue and MAPs - 06162026.xlsx"
+# Path to old trackers
+DFS_INPUT_FILE = None
+DPS_EPS_INPUT_FILE = None
+CARDS_INPUT_FILE = None
+CAPS_INPUT_FILE = None
+MR_INPUT_FILE = None
 
 # Set to True to save a debug snapshot of the full merged dataset before
 # any BU filtering, so you can spot duplicate MAP IDs or missing columns.
@@ -55,15 +60,33 @@ DEBUG_SNAPSHOT_PATH = f"{BASE_DIR}/debug_all_issues_and_maps.xlsx"
 BUSINESS_UNITS = [
     {
         "business_unit_name": "DPS-EPS",
-        "business_leader_names": [],
+        "business_leader_names": [""],
         "col_to_search": "MC-3 Name",
-        "previous_tracker_path": None,
+        "previous_tracker_path": DPS_EPS_INPUT_FILE,
     },
     {
         "business_unit_name": "CAPS",
-        "business_leader_names": [],
+        "business_leader_names": [""],
         "col_to_search": "MC-3 Name",
-        "previous_tracker_path": None,
+        "previous_tracker_path": CAPS_INPUT_FILE,
+    },
+    {
+        "business_unit_name": "Cards-OnDot",
+        "business_leader_names": [""],
+        "col_to_search": "MC-3 Name",
+        "previous_tracker_path": CARDS_INPUT_FILE,
+    },
+    {
+        "business_unit_name": "DFS",
+        "business_leader_names": [""],
+        "col_to_search": "MC-3 Name",
+        "previous_tracker_path": DFS_INPUT_FILE,
+    },
+    {
+        "business_unit_name": "MR",
+        "business_leader_names": [""],
+        "col_to_search": "MC-3 Name",
+        "previous_tracker_path": MR_INPUT_FILE,
     },
 ]
 
@@ -125,7 +148,7 @@ MAPS_RENAME = {
 }
 
 # Ordered columns in the "Issues and MAPs" output sheet.
-# "Comments", "If MAP is Past Due, ETA?", and "hash" are added by the script.
+# "Comments", "If MAP is Past Due, ETA?", and "Hash" are added by the script.
 ISSUES_AND_MAPS_COLUMNS = [
     "Hash",
     "Issue MC-1",
@@ -262,7 +285,7 @@ def build_all_issues_and_maps(
 ) -> pd.DataFrame:
     """
     Merge issues and maps, rename columns to display names, add empty
-    user-maintained columns (Comments, ETA), and add the 'hash' key.
+    user-maintained columns (Comments, ETA), and add the 'Hash' key.
     """
     # Select and rename issue columns before the join
     issues = _select_available_cols(issues_df, ISSUES_SOURCE_COLS, "dump issues")
@@ -372,7 +395,7 @@ def merge_data_from_tracker(
 ) -> pd.DataFrame:
     """
     Pull the 'Comments' and 'If MAP is Past Due, ETA?' columns from last
-    week's output file and merge them into current_df by matching on 'hash'.
+    week's output file and merge them into current_df by matching on 'Hash'.
     New MAP IDs (no match) keep empty strings.
     """
     if not previous_tracker_path:
@@ -388,11 +411,11 @@ def merge_data_from_tracker(
     prev = pd.read_excel(prev_path, sheet_name="Issues and MAPs", dtype=str)
     prev.columns = prev.columns.str.strip()
 
-    carry = ["hash", "Comments", "If MAP is Past Due, ETA?"]
+    carry = ["Hash", "Comments", "If MAP is Past Due, ETA?"]
     carry = [c for c in carry if c in prev.columns]
 
-    if "hash" not in carry:
-        print("  WARNING: 'hash' column not found in previous tracker; skipping merge.")
+    if "Hash" not in carry:
+        print("  WARNING: 'Hash' column not found in previous tracker; skipping merge.")
         return current_df
 
     prev_subset = prev[carry].rename(
@@ -402,7 +425,7 @@ def merge_data_from_tracker(
         }
     )
 
-    merged = current_df.merge(prev_subset, on="hash", how="left")
+    merged = current_df.merge(prev_subset, on="Hash", how="left")
 
     if "_prev_Comments" in merged.columns:
         merged["Comments"] = merged["_prev_Comments"].fillna("")
@@ -640,7 +663,7 @@ def write_workbook(
 ) -> str:
     """Write the three-sheet tracker workbook and return the output path."""
     today_str = date.today().strftime("%Y%m%d")
-    filename = f"Issues & MAPs Tracker - {business_unit_name} - {today_str}.xlsx"
+    filename = f"{business_unit_name} - Issues & MAPs Tracker - {today_str}.xlsx"
     output_path = Path(output_dir) / filename
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
