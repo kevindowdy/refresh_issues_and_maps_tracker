@@ -30,11 +30,14 @@ from openpyxl.utils import get_column_letter
 # CONFIGURATION — edit this section before running
 # ─────────────────────────────────────────────────────────────────────────────
 
-# Path to the source workbook (daily-updated)
-SOURCE_FILE = "FIG Issue Management Model (repaired_2).xlsx"
-
 # Directory where output workbooks are written
-OUTPUT_DIR = "output"
+username = "" ## REPLACE WITH USERNAME
+OUTPUT_DIR = f"C:/Users/{username}/Downloads"
+
+# Path to the source workbook (daily-updated)
+SOURCE_FILE = f"{OUTPUT_DIR}/FIG Issue Management Model (repaired_2).xlsx"
+
+INPUT_FILE = "DPS-EPS - Issue and MAPs - 06162026.xlsx"
 
 # Set to True to save a debug snapshot of the full merged dataset before
 # any BU filtering, so you can spot duplicate MAP IDs or missing columns.
@@ -51,9 +54,9 @@ DEBUG_SNAPSHOT_PATH = "debug_all_issues_and_maps.xlsx"
 #                           or None to skip comment carry-forward
 BUSINESS_UNITS = [
     {
-        "business_unit_name": "Example BU",
-        "business_leader_names": ["Leader Name 1", "Leader Name 2"],
-        "col_to_search": "Issue MC-2",
+        "business_unit_name": "DPS-EPS",
+        "business_leader_names": [],
+        "col_to_search": "MC-3 Name",
         "previous_tracker_path": None,
     },
     # Add more business units here, e.g.:
