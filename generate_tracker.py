@@ -445,13 +445,12 @@ def enrich_summary_and_comments(df: pd.DataFrame) -> pd.DataFrame:
 
     # Prefix Comments with today's date; append old comments after a newline
     if "Comments" in df.columns:
-        def _format_comments(comment):
-            existing = str(comment).strip() if pd.notna(comment) and str(comment).strip() not in ("", "nan") else ""
-            if existing:
-                return f"{today_prefix}\n{existing}"
-            return f"{today_prefix}\n"
-
-        df["Comments"] = df["Comments"].apply(_format_comments)
+        existing = df["Comments"].apply(
+            lambda c: str(c).strip() if pd.notna(c) and str(c).strip() not in ("", "nan") else ""
+        )
+        df["Comments"] = existing.apply(
+            lambda c: f"{today_prefix}\n{c}" if c else f"{today_prefix}\n"
+        )
 
     return df
 
