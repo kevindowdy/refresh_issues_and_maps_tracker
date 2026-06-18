@@ -321,13 +321,21 @@ def filter_discussion_needed(df: pd.DataFrame) -> pd.DataFrame:
       Issue Status : closed, cancelled
       MAP Status   : cancelled, completed, draft
     """
-    def _is_active(series: pd.Series, exclude_set: set) -> pd.Series:
-        is_blank = series.isna() | (series.astype(str).str.strip() == "") | (series == 0)
-        is_excluded = series.astype(str).str.strip().str.lower().isin(exclude_set)
-        return ~is_blank & ~is_excluded
+    issue_status = df["Issue Status"]
+    issue_active = (
+        ~issue_status.isna()
+        & (issue_status.astype(str).str.strip() != "")
+        & (issue_status != 0)
+        & ~issue_status.astype(str).str.strip().str.lower().isin(ISSUE_STATUSES_EXCLUDE)
+    )
 
-    issue_active = _is_active(df["Issue Status"], ISSUE_STATUSES_EXCLUDE)
-    map_active = _is_active(df["MAP Status"], MAP_STATUSES_EXCLUDE)
+    map_status = df["MAP Status"]
+    map_active = (
+        ~map_status.isna()
+        & (map_status.astype(str).str.strip() != "")
+        & (map_status != 0)
+        & ~map_status.astype(str).str.strip().str.lower().isin(MAP_STATUSES_EXCLUDE)
+    )
 
     result = df[issue_active & map_active].copy().reset_index(drop=True)
     excluded = len(df) - len(result)
