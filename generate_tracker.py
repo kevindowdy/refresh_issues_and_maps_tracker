@@ -31,7 +31,7 @@ from openpyxl.utils import get_column_letter
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Directory where output workbooks are written
-username = "" ## REPLACE WITH USERNAME
+username = "fbfepde" ## REPLACE WITH USERNAME
 BASE_DIR = f"C:/Users/{username}/Downloads"
 
 # Path to the source workbook (daily-updated)
@@ -127,6 +127,7 @@ MAPS_RENAME = {
 # Ordered columns in the "Issues and MAPs" output sheet.
 # "Comments", "If MAP is Past Due, ETA?", and "hash" are added by the script.
 ISSUES_AND_MAPS_COLUMNS = [
+    "Hash",
     "Issue MC-1",
     "Issue MC-2",
     "Issue ID",
@@ -144,20 +145,19 @@ ISSUES_AND_MAPS_COLUMNS = [
     "MAP opened date",
     "MAP Due Date",
     "AP Status",
-    "Summary Update",
-    "Comments",
-    "If MAP is Past Due, ETA?",
     "Enterprise Risk Severity Rating",
     "Last Updated Date",
     "# Days to MAP Due Date",
-    "hash",
+    "Summary Update",
+    "Comments",
+    "If MAP is Past Due, ETA?",
 ]
 
-# Issue Status values that indicate no discussion is needed (closed/cancelled/blank-like)
-ISSUE_STATUSES_EXCLUDE = {"closed", "cancelled", "canceled"}
+# Issue Status values that indicate a discussion is needed
+ISSUE_STATUSES_INCLUDE = {"open", "past due", "past due - pending map owner approval", "past due - pending aso approval"}
 
-# MAP Status values that indicate no discussion is needed (cancelled/completed/draft/blank-like)
-MAP_STATUSES_EXCLUDE = {"cancelled", "canceled", "completed", "draft"}
+# MAP Status values that indicate no discussion is needed
+MAP_STATUSES_EXCLUDE = {"cancelled", "draft", "completed", "draft", "map cancelled", "draft - pending approvals", "map cancellation pending aso approval"}
 
 # Columns shown on the "MAPs Compliance Sheet"
 COMPLIANCE_DISPLAY_COLUMNS = [
@@ -172,8 +172,6 @@ COMPLIANCE_DISPLAY_COLUMNS = [
     "Days Since Update",
     "Cadence Days",
     "Compliance Result",
-    "Comments",
-    "If MAP is Past Due, ETA?",
 ]
 
 # Date columns — formatted as MM/DD/YYYY in the output sheets
@@ -323,18 +321,18 @@ def filter_discussion_needed(df: pd.DataFrame) -> pd.DataFrame:
     """
     issue_status = df["Issue Status"]
     issue_active = (
-        ~issue_status.isna()
-        & (issue_status.astype(str).str.strip() != "")
-        & (issue_status != 0)
-        & ~issue_status.astype(str).str.strip().str.lower().isin(ISSUE_STATUSES_EXCLUDE)
+        ~issue_status.isna() # not null
+        & (issue_status.astype(str).str.strip() != "") # not empty
+        & (issue_status != 0) # not blank/zero
+        & issue_status.astype(str).str.strip().str.lower().isin(ISSUE_STATUSES_INCLUDE) # has these statuses
     )
 
     map_status = df["MAP Status"]
     map_active = (
-        ~map_status.isna()
-        & (map_status.astype(str).str.strip() != "")
-        & (map_status != 0)
-        & ~map_status.astype(str).str.strip().str.lower().isin(MAP_STATUSES_EXCLUDE)
+        ~map_status.isna() # not null
+        & (map_status.astype(str).str.strip() != "") # not empty
+        & (map_status != 0) # not blank/zero
+        & ~map_status.astype(str).str.strip().str.lower().isin(MAP_STATUSES_EXCLUDE) # not these statuses
     )
 
     result = df[issue_active & map_active].copy().reset_index(drop=True)
