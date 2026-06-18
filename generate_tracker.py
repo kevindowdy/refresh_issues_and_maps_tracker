@@ -31,7 +31,7 @@ from openpyxl.utils import get_column_letter
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Directory where output workbooks are written
-username = "fbfepde" ## REPLACE WITH USERNAME
+username = "" ## REPLACE WITH USERNAME
 BASE_DIR = f"C:/Users/{username}/Downloads"
 
 # Path to the source workbook (daily-updated)
