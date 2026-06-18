@@ -153,6 +153,12 @@ ISSUES_AND_MAPS_COLUMNS = [
     "hash",
 ]
 
+# Issue Status values that indicate no discussion is needed (closed/cancelled/blank-like)
+ISSUE_STATUSES_EXCLUDE = {"closed", "cancelled", "canceled"}
+
+# MAP Status values that indicate no discussion is needed (cancelled/completed/draft/blank-like)
+MAP_STATUSES_EXCLUDE = {"cancelled", "canceled", "completed", "draft"}
+
 # Columns shown on the "MAPs Compliance Sheet"
 COMPLIANCE_DISPLAY_COLUMNS = [
     "Issue ID",
@@ -300,6 +306,33 @@ def save_debug_snapshot(df: pd.DataFrame, path: str) -> None:
     """Write the full merged dataset to an Excel file for manual spot-checking."""
     df.to_excel(path, index=False)
     print(f"  Debug snapshot saved → {Path(path).resolve()}")
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DISCUSSION-NEEDED FILTER
+# ─────────────────────────────────────────────────────────────────────────────
+
+def filter_discussion_needed(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Return only rows that need active discussion — i.e. where both the Issue
+    Status and the MAP Status indicate in-flight work.
+
+    Excluded (→ N) when either column is blank-like (NaN / empty string / 0)
+    or matches a terminal status:
+      Issue Status : closed, cancelled
+      MAP Status   : cancelled, completed, draft
+    """
+    def _is_active(series: pd.Series, exclude_set: set) -> pd.Series:
+        is_blank = series.isna() | (series.astype(str).str.strip() == "") | (series == 0)
+        is_excluded = series.astype(str).str.strip().str.lower().isin(exclude_set)
+        return ~is_blank & ~is_excluded
+
+    issue_active = _is_active(df["Issue Status"], ISSUE_STATUSES_EXCLUDE)
+    map_active = _is_active(df["MAP Status"], MAP_STATUSES_EXCLUDE)
+
+    result = df[issue_active & map_active].copy().reset_index(drop=True)
+    excluded = len(df) - len(result)
+    print(f"  Discussion-needed filter: {len(result):,} rows kept, {excluded:,} excluded")
+    return result
 
 # ─────────────────────────────────────────────────────────────────────────────
 # BUSINESS-UNIT FILTERING
@@ -619,7 +652,11 @@ def main() -> None:
         save_debug_snapshot(all_issues_and_maps, DEBUG_SNAPSHOT_PATH)
         print("  Review this file to confirm columns are correct and there are no duplicate MAP IDs.")
 
-    # 5. Generate one workbook per business unit
+    # 5. Filter to rows that need active discussion (open issues + active MAPs)
+    print("\nFiltering for open, past-due issues and maps with discussion needed...")
+    all_issues_and_maps_with_discussion_needed = filter_discussion_needed(all_issues_and_maps)
+
+    # 6. Generate one workbook per business unit
     print(f"\nProcessing {len(BUSINESS_UNITS)} business unit(s)...\n")
     for bu_config in BUSINESS_UNITS:
         bu_name = bu_config["business_unit_name"]
@@ -630,7 +667,7 @@ def main() -> None:
         print(f"{'─' * 55}")
         print(f"  [{bu_name}]")
 
-        bu_data = filter_by_business_unit(all_issues_and_maps, col_to_search, leader_names)
+        bu_data = filter_by_business_unit(all_issues_and_maps_with_discussion_needed, col_to_search, leader_names)
         if bu_data.empty:
             print(f"  SKIP: no data found for '{bu_name}' — check business_leader_names and col_to_search.")
             continue
