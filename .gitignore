@@ -10,3 +10,4 @@ build/
 venv/
 output/
 debug_*.xlsx
+.idea/

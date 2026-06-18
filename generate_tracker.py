@@ -32,17 +32,17 @@ from openpyxl.utils import get_column_letter
 
 # Directory where output workbooks are written
 username = "" ## REPLACE WITH USERNAME
-OUTPUT_DIR = f"C:/Users/{username}/Downloads"
+BASE_DIR = f"C:/Users/{username}/Downloads"
 
 # Path to the source workbook (daily-updated)
-SOURCE_FILE = f"{OUTPUT_DIR}/FIG Issue Management Model (repaired_2).xlsx"
+SOURCE_FILE = f"{BASE_DIR}/FIG Issue Management Model (repaired_2).xlsx"
 
 INPUT_FILE = "DPS-EPS - Issue and MAPs - 06162026.xlsx"
 
 # Set to True to save a debug snapshot of the full merged dataset before
 # any BU filtering, so you can spot duplicate MAP IDs or missing columns.
 SAVE_DEBUG_SNAPSHOT = True
-DEBUG_SNAPSHOT_PATH = "debug_all_issues_and_maps.xlsx"
+DEBUG_SNAPSHOT_PATH = f"{BASE_DIR}/debug_all_issues_and_maps.xlsx"
 
 # ── Business-unit definitions ────────────────────────────────────────────────
 # Add one dict per BU.  Fields:
@@ -59,13 +59,12 @@ BUSINESS_UNITS = [
         "col_to_search": "MC-3 Name",
         "previous_tracker_path": None,
     },
-    # Add more business units here, e.g.:
-    # {
-    #     "business_unit_name": "Finance",
-    #     "business_leader_names": ["Jane Smith"],
-    #     "col_to_search": "Issue MC-2",
-    #     "previous_tracker_path": "output/Issues & MAPs Tracker - Finance - 20260610.xlsx",
-    # },
+    {
+        "business_unit_name": "CAPS",
+        "business_leader_names": [],
+        "col_to_search": "MC-3 Name",
+        "previous_tracker_path": None,
+    },
 ]
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -75,6 +74,7 @@ BUSINESS_UNITS = [
 # Columns to pull from "dump issues" (exact names as they appear in the sheet)
 ISSUES_SOURCE_COLS = [
     "Issue ID",
+    "MC -1",
     "MC -2",
     "MC -3",
     "Issue Name**",
@@ -89,6 +89,7 @@ ISSUES_SOURCE_COLS = [
 # Applied before the join to prevent column-name collisions.
 ISSUES_RENAME = {
     "MC -2": "Issue MC-2",
+    "MC -1": "Issue MC-1",
     "MC -3": "MC-3 Name",
     "Issue Name**": "Issue Name",
     "Issue Source L1**": "Source",
@@ -126,6 +127,7 @@ MAPS_RENAME = {
 # Ordered columns in the "Issues and MAPs" output sheet.
 # "Comments", "If MAP is Past Due, ETA?", and "hash" are added by the script.
 ISSUES_AND_MAPS_COLUMNS = [
+    "Issue MC-1",
     "Issue MC-2",
     "Issue ID",
     "Issue Name",
@@ -280,7 +282,7 @@ def build_all_issues_and_maps(
     merged["If MAP is Past Due, ETA?"] = ""
 
     # Composite key for week-over-week comment carry-forward
-    merged["hash"] = (
+    merged["Hash"] = (
         merged.get("Issue ID", pd.Series("", index=merged.index)).fillna("").astype(str)
         + "|"
         + merged.get("MAP ID", pd.Series("", index=merged.index)).fillna("").astype(str)
@@ -635,7 +637,7 @@ def main() -> None:
 
         bu_data = merge_data_from_tracker(bu_data, prev_tracker)
         compliance_data = generate_map_compliance_data(bu_data)
-        write_workbook(bu_data, compliance_data, bu_name, OUTPUT_DIR)
+        write_workbook(bu_data, compliance_data, bu_name, BASE_DIR)
 
     print(f"\n{'=' * 65}")
     print("  Done.")
