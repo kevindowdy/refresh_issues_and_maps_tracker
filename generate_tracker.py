@@ -318,9 +318,7 @@ def build_all_issues_and_maps(
         + merged.get("MAP ID", pd.Series("", index=merged.index)).fillna("").astype(str)
     )
 
-    # Order to the desired output columns, keeping only what exists
-    ordered = [c for c in ISSUES_AND_MAPS_COLUMNS if c in merged.columns]
-    merged = merged[ordered].reset_index(drop=True)
+    merged = merged.reset_index(drop=True)
 
     print(f"  Merged      : {len(merged):,} rows, {len(merged.columns)} columns")
     return merged
@@ -675,7 +673,8 @@ def write_workbook(
 
     # ── Sheet 1: Issues and MAPs ─────────────────────────────────────────────
     ws_issues = wb.create_sheet("Issues and MAPs")
-    _write_df_to_sheet(ws_issues, bu_df, date_cols=DATE_COLUMNS)
+    issues_display_cols = [c for c in ISSUES_AND_MAPS_COLUMNS if c in bu_df.columns]
+    _write_df_to_sheet(ws_issues, bu_df[issues_display_cols], date_cols=DATE_COLUMNS)
 
     # ── Sheet 2: MAPs Compliance Sheet ──────────────────────────────────────
     ws_compliance = wb.create_sheet("MAPs Compliance Sheet")
