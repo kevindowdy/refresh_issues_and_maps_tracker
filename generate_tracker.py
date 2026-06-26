@@ -31,8 +31,8 @@ from openpyxl.utils import get_column_letter
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Directory where output workbooks are written
-username = "" ## REPLACE WITH USERNAME
-BASE_DIR = f"C:/Users/{username}/Downloads"
+USERNAME = "" ## REPLACE WITH USERNAME
+BASE_DIR = f"C:/Users/{USERNAME}/Downloads"
 
 # Path to the source workbook (daily-updated)
 SOURCE_FILE = f"{BASE_DIR}/FIG Issue Management Model (repaired_2).xlsx"
@@ -41,7 +41,7 @@ SOURCE_FILE = f"{BASE_DIR}/FIG Issue Management Model (repaired_2).xlsx"
 DFS_INPUT_FILE = None
 DPS_EPS_INPUT_FILE = None
 CARDS_INPUT_FILE = None
-CAPS_INPUT_FILE = None
+CAPS_INPUT_FILE = f"C:/Users/{USERNAME}/Downloads/CAPS- Issue and MAPs - 06182026.xlsx"
 MR_INPUT_FILE = None
 
 # Set to True to save a debug snapshot of the full merged dataset before
@@ -134,6 +134,7 @@ MAPS_SOURCE_COLS = [
     "AP Summary Status",
     "Last Updated",
     "# Days to MAP Due Date",
+    "MC -3"
 ]
 
 # Pre-merge rename map for maps columns
@@ -145,6 +146,7 @@ MAPS_RENAME = {
     "MAP Due Date (Current)": "MAP Due Date",
     "AP Summary Status": "Summary Update",
     "Last Updated": "Last Updated Date",
+    "MC -3": "MAP MC -3"
 }
 
 # Ordered columns in the "Issues and MAPs" output sheet.
@@ -161,6 +163,7 @@ ISSUES_AND_MAPS_COLUMNS = [
     "issue date opened",
     "Issue Due Date",
     "MAP MC2",
+    "MAP MC -3"
     "MAP Owner",
     "MAP Status",
     "MAP ID",
@@ -408,7 +411,7 @@ def merge_data_from_tracker(
         return current_df
 
     print(f"  Merging comments from: {prev_path}")
-    prev = pd.read_excel(prev_path, sheet_name="Issues and MAPs", dtype=str)
+    prev = pd.read_excel(prev_path, sheet_name="Issues & MAPs", dtype=str)
     prev.columns = prev.columns.str.strip()
 
     carry = ["Hash", "Comments", "If MAP is Past Due, ETA?"]
