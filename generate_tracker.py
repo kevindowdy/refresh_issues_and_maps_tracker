@@ -32,17 +32,17 @@ from openpyxl.utils import get_column_letter
 
 # Directory where output workbooks are written
 USERNAME = "" ## REPLACE WITH USERNAME
-BASE_DIR = f"C:/Users/{USERNAME}/Downloads"
+BASE_DIR = f"C:/Users/{USERNAME}/Documents/Temporary/FIG_Issues_MAPs_Data"
 
 # Path to the source workbook (daily-updated)
 SOURCE_FILE = f"{BASE_DIR}/FIG Issue Management Model (repaired_2).xlsx"
 
 # Path to old trackers
-DFS_INPUT_FILE = None
-DPS_EPS_INPUT_FILE = None
-CARDS_INPUT_FILE = None
-CAPS_INPUT_FILE = f"C:/Users/{USERNAME}/Downloads/CAPS- Issue and MAPs - 06182026.xlsx"
-MR_INPUT_FILE = None
+DFS_INPUT_FILE = f"{BASE_DIR}/DFS_Old_Tracker.xlsx"
+DPS_EPS_INPUT_FILE = f"{BASE_DIR}/DPS_EPS_Old_Tracker.xlsx"
+CARDS_INPUT_FILE = f"{BASE_DIR}/CARDS_Old_Tracker.xlsx"
+CAPS_INPUT_FILE = f"{BASE_DIR}/CAPS_Old_Tracker.xlsx"
+MR_INPUT_FILE = f"{BASE_DIR}/MR_Old_Tracker.xlsx"
 
 # Set to True to save a debug snapshot of the full merged dataset before
 # any BU filtering, so you can spot duplicate MAP IDs or missing columns.
@@ -61,31 +61,31 @@ BUSINESS_UNITS = [
     {
         "business_unit_name": "DPS-EPS",
         "business_leader_names": [""],
-        "col_to_search": "MC-3 Name",
+        "col_to_search": "Issue MC-3",
         "previous_tracker_path": DPS_EPS_INPUT_FILE,
     },
     {
         "business_unit_name": "CAPS",
         "business_leader_names": [""],
-        "col_to_search": "MC-3 Name",
+        "col_to_search": "Issue MC-3",
         "previous_tracker_path": CAPS_INPUT_FILE,
     },
     {
         "business_unit_name": "Cards-OnDot",
         "business_leader_names": [""],
-        "col_to_search": "MC-3 Name",
+        "col_to_search": "Issue MC-3",
         "previous_tracker_path": CARDS_INPUT_FILE,
     },
     {
         "business_unit_name": "DFS",
         "business_leader_names": [""],
-        "col_to_search": "MC-3 Name",
+        "col_to_search": "Issue MC-3",
         "previous_tracker_path": DFS_INPUT_FILE,
     },
     {
         "business_unit_name": "MR",
         "business_leader_names": [""],
-        "col_to_search": "MC-3 Name",
+        "col_to_search": "Issue MC-3",
         "previous_tracker_path": MR_INPUT_FILE,
     },
 ]
@@ -113,7 +113,7 @@ ISSUES_SOURCE_COLS = [
 ISSUES_RENAME = {
     "MC -2": "Issue MC-2",
     "MC -1": "Issue MC-1",
-    "MC -3": "MC-3 Name",
+    "MC -3": "Issue MC-3",
     "Issue Name**": "Issue Name",
     "Issue Source L1**": "Source",
     "Issue Workflow Status": "Issue Status",
@@ -158,10 +158,11 @@ ISSUES_AND_MAPS_COLUMNS = [
     "Issue ID",
     "Issue Name",
     "Source",
-    "MC-3 Name",
+    "Issue MC-3",
     "Issue Status",
     "issue date opened",
     "Issue Due Date",
+    "Issue Assessment Source Owner"
     "MAP MC2",
     "MAP MC -3"
     "MAP Owner",
@@ -291,11 +292,11 @@ def build_all_issues_and_maps(
     user-maintained columns (Comments, ETA), and add the 'Hash' key.
     """
     # Select and rename issue columns before the join
-    issues = _select_available_cols(issues_df, ISSUES_SOURCE_COLS, "dump issues")
+    issues = issues_df
     issues = issues.rename(columns=ISSUES_RENAME)
 
     # Select and rename map columns before the join
-    maps = _select_available_cols(maps_df, MAPS_SOURCE_COLS, "dump maps")
+    maps = maps_df
     maps = maps.rename(columns=MAPS_RENAME)
 
     # Right-join so every MAP appears even if its Issue ID is not found
