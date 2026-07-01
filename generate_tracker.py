@@ -61,31 +61,31 @@ BUSINESS_UNITS = [
     {
         "business_unit_name": "DPS-EPS",
         "business_leader_names": [""],
-        "col_to_search": "Issue MC-3",
+        "col_to_search": "MAP MC-3",
         "previous_tracker_path": DPS_EPS_INPUT_FILE,
     },
     {
         "business_unit_name": "CAPS",
         "business_leader_names": [""],
-        "col_to_search": "Issue MC-3",
+        "col_to_search": "MAP MC-3",
         "previous_tracker_path": CAPS_INPUT_FILE,
     },
     {
         "business_unit_name": "Cards-OnDot",
         "business_leader_names": [""],
-        "col_to_search": "Issue MC-3",
+        "col_to_search": "MAP MC-3",
         "previous_tracker_path": CARDS_INPUT_FILE,
     },
     {
         "business_unit_name": "DFS",
         "business_leader_names": [""],
-        "col_to_search": "Issue MC-3",
+        "col_to_search": "MAP MC-3",
         "previous_tracker_path": DFS_INPUT_FILE,
     },
     {
         "business_unit_name": "MR",
         "business_leader_names": [""],
-        "col_to_search": "Issue MC-3",
+        "col_to_search": "MAP MC-3",
         "previous_tracker_path": MR_INPUT_FILE,
     },
 ]
@@ -106,6 +106,7 @@ ISSUES_SOURCE_COLS = [
     "Date Opened",
     "Issue Due Date",
     "Enterprise Risk Severity Rating",
+    "Assessment Source Owner"
 ]
 
 # Pre-merge rename map for issues columns (source name → display name).
@@ -117,7 +118,6 @@ ISSUES_RENAME = {
     "Issue Name**": "Issue Name",
     "Issue Source L1**": "Source",
     "Issue Workflow Status": "Issue Status",
-    "Date Opened": "issue date opened",
 }
 
 # Columns to pull from "dump maps" (exact names as they appear in the sheet)
@@ -140,40 +140,37 @@ MAPS_SOURCE_COLS = [
 # Pre-merge rename map for maps columns
 MAPS_RENAME = {
     "MAP Name**": "MAP Name",
-    "MC -2": "MAP MC2",
+    "MC -2": "MAP MC-2",
     "MAP Workflow Status": "MAP Status",
-    "MAP Opened Date": "MAP opened date",
     "MAP Due Date (Current)": "MAP Due Date",
     "AP Summary Status": "Summary Update",
-    "Last Updated": "Last Updated Date",
-    "MC -3": "MAP MC -3"
+    "MC -3": "MAP MC-3"
 }
 
 # Ordered columns in the "Issues and MAPs" output sheet.
 # "Comments", "If MAP is Past Due, ETA?", and "Hash" are added by the script.
 ISSUES_AND_MAPS_COLUMNS = [
     "Hash",
-    "Issue MC-1",
-    "Issue MC-2",
     "Issue ID",
     "Issue Name",
-    "Source",
-    "Issue MC-3",
     "Issue Status",
-    "issue date opened",
+    "Issue MC-1",
+    "Issue MC-2",
+    "Issue MC-3",
+    "Issue Date Opened",
     "Issue Due Date",
     "Issue Assessment Source Owner"
-    "MAP MC2",
-    "MAP MC -3"
-    "MAP Owner",
-    "MAP Status",
     "MAP ID",
     "MAP Name",
-    "MAP opened date",
+    "MAP MC-2",
+    "MAP MC-3"
+    "MAP Owner",
+    "MAP Status",
+    "MAP Opened Date",
     "MAP Due Date",
     "AP Status",
+    "Last Updated"
     "Enterprise Risk Severity Rating",
-    "Last Updated Date",
     "# Days to MAP Due Date",
     "Summary Update",
     "Comments",
@@ -181,10 +178,10 @@ ISSUES_AND_MAPS_COLUMNS = [
 ]
 
 # Issue Status values that indicate a discussion is needed
-ISSUE_STATUSES_INCLUDE = {"open", "past due", "past due - pending map owner approval", "past due - pending aso approval"}
+ISSUE_STATUSES_INCLUDE = {"open", "past due", "past due - pending map owner approval", "past due - pending aso approval", "past due - pending ro approval"}
 
 # MAP Status values that indicate no discussion is needed
-MAP_STATUSES_EXCLUDE = {"cancelled", "draft", "completed", "draft", "map cancelled", "draft - pending approvals", "map cancellation pending aso approval"}
+MAP_STATUSES_EXCLUDE = {"cancelled", "draft", "completed", "map cancelled", "draft - pending approvals"}
 
 # Columns shown on the "MAPs Compliance Sheet"
 COMPLIANCE_DISPLAY_COLUMNS = [
@@ -195,7 +192,7 @@ COMPLIANCE_DISPLAY_COLUMNS = [
     "MAP Status",
     "MAP Owner",
     "MAP Due Date",
-    "Last Updated Date",
+    "Last Updated",
     "Days Since Update",
     "Cadence Days",
     "Compliance Result",
@@ -445,11 +442,11 @@ def merge_data_from_tracker(
 
 def _add_last_updated_prefix_to_summary(df: pd.DataFrame) -> pd.DataFrame:
     """Prefix 'Summary Update' with its 'Last Updated Date' month/day (e.g. 'Jan 11: ...')."""
-    if "Summary Update" not in df.columns or "Last Updated Date" not in df.columns:
+    if "Summary Update" not in df.columns or "Last Updated" not in df.columns:
         return df
 
     summary = df["Summary Update"].apply(lambda v: str(v) if pd.notna(v) else "")
-    date_prefix = pd.to_datetime(df["Last Updated Date"], errors="coerce").dt.strftime("%b %d").fillna("")
+    date_prefix = pd.to_datetime(df["Last Updated"], errors="coerce").dt.strftime("%b %d").fillna("")
     df["Summary Update"] = (date_prefix + ": " + summary).str.lstrip(": ")
     return df
 
@@ -495,11 +492,11 @@ def generate_map_compliance_data(bu_df: pd.DataFrame) -> pd.DataFrame:
     ].copy().reset_index(drop=True)
 
     # Parse dates
-    compliance_df["Last Updated Date"] = pd.to_datetime(
-        compliance_df["Last Updated Date"], errors="coerce"
+    compliance_df["Last Updated"] = pd.to_datetime(
+        compliance_df["Last Updated"], errors="coerce"
     )
     compliance_df["Days Since Update"] = (
-        (today - compliance_df["Last Updated Date"]).dt.days
+        (today - compliance_df["Last Updated"]).dt.days
         .fillna(-1)
         .astype(int)
     )
