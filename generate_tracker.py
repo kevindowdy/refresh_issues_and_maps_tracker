@@ -148,7 +148,8 @@ MAPS_RENAME = {
 }
 
 # Ordered columns in the "Issues and MAPs" output sheet.
-# "Comments", "If MAP is Past Due, ETA?", and "Hash" are added by the script.
+# "Comments", "If MAP is Past Due, ETA?", "Risk Acceptance- YES/NO?", and
+# "Hash" are added by the script.
 ISSUES_AND_MAPS_COLUMNS = [
     "Hash",
     "Issue ID",
@@ -175,6 +176,7 @@ ISSUES_AND_MAPS_COLUMNS = [
     "Summary Update",
     "Comments",
     "If MAP is Past Due, ETA?",
+    "Risk Acceptance- YES/NO?",
 ]
 
 # Issue Status values that indicate a discussion is needed
@@ -308,6 +310,7 @@ def build_all_issues_and_maps(
     # Add user-maintained columns (populated later from previous tracker)
     merged["Comments"] = ""
     merged["If MAP is Past Due, ETA?"] = ""
+    merged["Risk Acceptance- YES/NO?"] = ""
 
     # Composite key for week-over-week comment carry-forward
     merged["Hash"] = (
@@ -393,8 +396,9 @@ def merge_data_from_tracker(
     previous_tracker_path: str | None,
 ) -> pd.DataFrame:
     """
-    Pull the 'Comments' and 'If MAP is Past Due, ETA?' columns from last
-    week's output file and merge them into current_df by matching on 'Hash'.
+    Pull the 'Comments', 'If MAP is Past Due, ETA?', and
+    'Risk Acceptance- YES/NO?' columns from last week's output file and
+    merge them into current_df by matching on 'Hash'.
     New MAP IDs (no match) keep empty strings.
     """
     if not previous_tracker_path:
@@ -410,7 +414,7 @@ def merge_data_from_tracker(
     prev = pd.read_excel(prev_path, sheet_name="Issues & MAPs", dtype=str)
     prev.columns = prev.columns.str.strip()
 
-    carry = ["Hash", "Comments", "If MAP is Past Due, ETA?"]
+    carry = ["Hash", "Comments", "If MAP is Past Due, ETA?", "Risk Acceptance- YES/NO?"]
     carry = [c for c in carry if c in prev.columns]
 
     if "Hash" not in carry:
@@ -421,6 +425,7 @@ def merge_data_from_tracker(
         columns={
             "Comments": "_prev_Comments",
             "If MAP is Past Due, ETA?": "_prev_ETA",
+            "Risk Acceptance- YES/NO?": "_prev_RiskAcceptance",
         }
     )
 
@@ -433,6 +438,10 @@ def merge_data_from_tracker(
     if "_prev_ETA" in merged.columns:
         merged["If MAP is Past Due, ETA?"] = merged["_prev_ETA"].fillna("")
         merged.drop(columns=["_prev_ETA"], inplace=True)
+
+    if "_prev_RiskAcceptance" in merged.columns:
+        merged["Risk Acceptance- YES/NO?"] = merged["_prev_RiskAcceptance"].fillna("")
+        merged.drop(columns=["_prev_RiskAcceptance"], inplace=True)
 
     return merged
 
