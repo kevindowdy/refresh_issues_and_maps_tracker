@@ -32,7 +32,7 @@ The Refresh Issues & MAPs Tracker Script is designed to generate standardized, b
    Business leader mappings are fully configurable
    Supports organizational changes without code restructuring
 7. `Comment and ETA Carry-Forward` - If a previous tracker is provided, the script pulls these columns to the new data using the Hash key:
-   Comments, Past Due ETA updates
+   Comments, Past Due ETA updates, Risk Acceptance- YES/NO?
 8. `Data Enrichment` - Summary updates prefixed with last update date. Comments automatically stamped with current date.
 9. `MAP Compliance Calculation` - The script evaluates whether MAP updates meet governance-defined cadence requirements.
 
