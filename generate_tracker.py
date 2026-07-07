@@ -44,9 +44,16 @@ CARDS_INPUT_FILE = f"{BASE_DIR}/CARDS_Old_Tracker.xlsx"
 CAPS_INPUT_FILE = f"{BASE_DIR}/CAPS_Old_Tracker.xlsx"
 MR_INPUT_FILE = f"{BASE_DIR}/MR_Old_Tracker.xlsx"
 
+# Business Unit Leader Names
+DFS_LEADERS = []
+DPS_EPS_LEADERS = []
+CARDS_LEADERS = []
+CAPS_LEADERS = []
+MR_LEADERS = []
+
 # Set to True to save a debug snapshot of the full merged dataset before
 # any BU filtering, so you can spot duplicate MAP IDs or missing columns.
-SAVE_DEBUG_SNAPSHOT = True
+SAVE_DEBUG_SNAPSHOT = False
 DEBUG_SNAPSHOT_PATH = f"{BASE_DIR}/debug_all_issues_and_maps.xlsx"
 
 # ── Business-unit definitions ────────────────────────────────────────────────
@@ -60,31 +67,31 @@ DEBUG_SNAPSHOT_PATH = f"{BASE_DIR}/debug_all_issues_and_maps.xlsx"
 BUSINESS_UNITS = [
     {
         "business_unit_name": "DPS-EPS",
-        "business_leader_names": [""],
+        "business_leader_names": DPS_EPS_LEADERS,
         "col_to_search": "MAP MC-3",
         "previous_tracker_path": DPS_EPS_INPUT_FILE,
     },
     {
         "business_unit_name": "CAPS",
-        "business_leader_names": [""],
+        "business_leader_names": CAPS_LEADERS,
         "col_to_search": "MAP MC-3",
         "previous_tracker_path": CAPS_INPUT_FILE,
     },
     {
         "business_unit_name": "Cards-OnDot",
-        "business_leader_names": [""],
+        "business_leader_names": CARDS_LEADERS,
         "col_to_search": "MAP MC-3",
         "previous_tracker_path": CARDS_INPUT_FILE,
     },
     {
         "business_unit_name": "DFS",
-        "business_leader_names": [""],
+        "business_leader_names": DFS_LEADERS,
         "col_to_search": "MAP MC-3",
         "previous_tracker_path": DFS_INPUT_FILE,
     },
     {
         "business_unit_name": "MR",
-        "business_leader_names": [""],
+        "business_leader_names": MR_LEADERS,
         "col_to_search": "MAP MC-3",
         "previous_tracker_path": MR_INPUT_FILE,
     },
@@ -160,17 +167,17 @@ ISSUES_AND_MAPS_COLUMNS = [
     "Issue MC-3",
     "Issue Date Opened",
     "Issue Due Date",
-    "Issue Assessment Source Owner"
+    "Issue Assessment Source Owner",
     "MAP ID",
     "MAP Name",
     "MAP MC-2",
-    "MAP MC-3"
+    "MAP MC-3",
     "MAP Owner",
     "MAP Status",
     "MAP Opened Date",
     "MAP Due Date",
     "AP Status",
-    "Last Updated"
+    "Last Updated",
     "Enterprise Risk Severity Rating",
     "# Days to MAP Due Date",
     "Summary Update",
@@ -679,12 +686,12 @@ def write_workbook(
     wb.remove(wb.active)  # remove default blank sheet
 
     # ── Sheet 1: Issues and MAPs ─────────────────────────────────────────────
-    ws_issues = wb.create_sheet("Issues and MAPs")
+    ws_issues = wb.create_sheet("Issues & MAPs")
     issues_display_cols = [c for c in ISSUES_AND_MAPS_COLUMNS if c in bu_df.columns]
     _write_df_to_sheet(ws_issues, bu_df[issues_display_cols], date_cols=DATE_COLUMNS)
 
     # ── Sheet 2: MAPs Compliance Sheet ──────────────────────────────────────
-    ws_compliance = wb.create_sheet("MAPs Compliance Sheet")
+    ws_compliance = wb.create_sheet("MAP Compliance")
     compliance_display = compliance_df[
         [c for c in COMPLIANCE_DISPLAY_COLUMNS if c in compliance_df.columns]
     ]
@@ -702,6 +709,38 @@ def write_workbook(
     print(f"  Output      : {output_path.resolve()}")
     return str(output_path)
 
+# ─────────────────────────────────────────────────────────────────────────────
+# populate_map_due_date
+# ─────────────────────────────────────────────────────────────────────────────
+
+def populate_map_due_date(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Populate 'MAP Due Date' from 'MAP Due Date (Original)'
+    when the current MAP Due Date is blank.
+    """
+    df = df.copy()
+
+    if "MAP Due Date" not in df.columns:
+        df["MAP Due Date"] = pd.NA
+
+    if "MAP Due Date (Original)" not in df.columns:
+        return df
+
+    df["MAP Due Date"] = df["MAP Due Date"].fillna(df["MAP Due Date (Original)"])
+
+    # Also handle blank strings
+    blank_mask = (
+        df["MAP Due Date"]
+        .astype(str)
+        .str.strip()
+        .isin(["", "nan", "NaT", "<NA>"])
+    )
+
+    df.loc[blank_mask, "MAP Due Date"] = (
+        df.loc[blank_mask, "MAP Due Date (Original)"]
+    )
+
+    return df
 # ─────────────────────────────────────────────────────────────────────────────
 # MAIN
 # ─────────────────────────────────────────────────────────────────────────────
@@ -749,6 +788,7 @@ def main() -> None:
 
         bu_data = merge_data_from_tracker(bu_data, prev_tracker)
         bu_data = enrich_summary_and_comments(bu_data)
+        bu_data = populate_map_due_date(bu_data)
         compliance_data = generate_map_compliance_data(bu_data)
         write_workbook(bu_data, compliance_data, bu_name, BASE_DIR)
 
