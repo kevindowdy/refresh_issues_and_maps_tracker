@@ -123,7 +123,7 @@ ISSUES_RENAME = {
     "MC -1": "Issue MC-1",
     "MC -3": "Issue MC-3",
     "Issue Name**": "Issue Name",
-    "Issue Source L1**": "Source",
+    "Issue Source L1**": "Issue Source",
     "Issue Workflow Status": "Issue Status",
     "Date Opened": "Issue Date Opened",
     "Assessment Source Owner": "Issue Assessment Source Owner"
@@ -160,9 +160,9 @@ MAPS_RENAME = {
 # "Comments", "If MAP is Past Due, ETA?", "Risk Acceptance- YES/NO?", and
 # "Hash" are added by the script.
 ISSUES_AND_MAPS_COLUMNS = [
-    "Hash",
     "Issue ID",
     "Issue Name",
+    "Issue Source",
     "Issue Status",
     "Issue MC-1",
     "Issue MC-2",
@@ -186,6 +186,7 @@ ISSUES_AND_MAPS_COLUMNS = [
     "Comments",
     "If MAP is Past Due, ETA?",
     "Risk Acceptance- YES/NO?",
+    "Hash",
 ]
 
 # Issue Status values that indicate a discussion is needed
