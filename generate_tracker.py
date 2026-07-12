@@ -53,7 +53,7 @@ MR_LEADERS = []
 
 # Set to True to save a debug snapshot of the full merged dataset before
 # any BU filtering, so you can spot duplicate MAP IDs or missing columns.
-SAVE_DEBUG_SNAPSHOT = False
+SAVE_DEBUG_SNAPSHOT = True
 DEBUG_SNAPSHOT_PATH = f"{BASE_DIR}/debug_all_issues_and_maps.xlsx"
 
 # ── Business-unit definitions ────────────────────────────────────────────────
@@ -125,6 +125,8 @@ ISSUES_RENAME = {
     "Issue Name**": "Issue Name",
     "Issue Source L1**": "Source",
     "Issue Workflow Status": "Issue Status",
+    "Date Opened": "Issue Date Opened",
+    "Assessment Source Owner": "Issue Assessment Source Owner"
 }
 
 # Columns to pull from "dump maps" (exact names as they appear in the sheet)
@@ -135,7 +137,7 @@ MAPS_SOURCE_COLS = [
     "MC -2",
     "MAP Workflow Status",
     "MAP Owner",
-    "MAP Opened Date",
+    "MAP Date Opened",
     "MAP Due Date (Current)",
     "AP Status",
     "AP Summary Status",
@@ -174,7 +176,7 @@ ISSUES_AND_MAPS_COLUMNS = [
     "MAP MC-3",
     "MAP Owner",
     "MAP Status",
-    "MAP Opened Date",
+    "MAP Date Opened",
     "MAP Due Date",
     "AP Status",
     "Last Updated",
