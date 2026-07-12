@@ -220,6 +220,13 @@ DATE_COLUMNS = {
     "If MAP is Past Due, ETA?",
 }
 
+# Columns hidden (not deleted) in the "Issues & MAPs" sheet of the final workbook
+ISSUES_AND_MAPS_HIDDEN_COLUMNS = [
+    "Enterprise Risk Severity Rating",
+    "Last Updated",
+    "# Days to MAP Due Date",
+    "Hash",
+]
 # Columns in the "Issues & MAPs" sheet whose cells are colored by value
 STATUS_COLUMNS_TO_COLOR = {"Issue Status", "MAP Status"}
 
@@ -620,6 +627,16 @@ def _write_df_to_sheet(
     ws.auto_filter.ref = ws.dimensions
 
 
+def _hide_columns(ws, df_columns: list[str], columns_to_hide: list[str]) -> None:
+    """Hide (not delete) the given columns by their display name."""
+    for col_name in columns_to_hide:
+        if col_name not in df_columns:
+            continue
+        col_idx = df_columns.index(col_name) + 1
+        letter = get_column_letter(col_idx)
+        ws.column_dimensions[letter].hidden = True
+
+
 def _color_compliance_column(ws, compliance_col_idx: int) -> None:
     """Apply red/green fill to cells in the Compliance Result column."""
     for row in ws.iter_rows(
@@ -738,6 +755,7 @@ def write_workbook(
     ws_issues = wb.create_sheet("Issues & MAPs")
     issues_display_cols = [c for c in ISSUES_AND_MAPS_COLUMNS if c in bu_df.columns]
     _write_df_to_sheet(ws_issues, bu_df[issues_display_cols], date_cols=DATE_COLUMNS)
+    _hide_columns(ws_issues, issues_display_cols, ISSUES_AND_MAPS_HIDDEN_COLUMNS)
     _color_status_columns(ws_issues, issues_display_cols)
 
     # ── Sheet 2: MAPs Compliance Sheet ──────────────────────────────────────
