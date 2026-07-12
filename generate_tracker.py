@@ -216,6 +216,7 @@ DATE_COLUMNS = {
     "MAP opened date",
     "MAP Due Date",
     "Last Updated Date",
+    "If MAP is Past Due, ETA?",
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
