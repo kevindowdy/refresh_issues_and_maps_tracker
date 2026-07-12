@@ -516,7 +516,7 @@ def enrich_summary_and_comments(df: pd.DataFrame) -> pd.DataFrame:
     """Apply summary-update and comments date enrichment to the discussion-needed dataset."""
     df = df.copy()
     df = _add_last_updated_prefix_to_summary(df)
-    df = _add_today_prefix_to_comments(df)
+    # df = _add_today_prefix_to_comments(df)
     return df
 
 # ─────────────────────────────────────────────────────────────────────────────
