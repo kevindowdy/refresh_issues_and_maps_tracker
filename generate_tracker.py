@@ -218,6 +218,23 @@ DATE_COLUMNS = {
     "Last Updated Date",
 }
 
+# Columns in the "Issues & MAPs" sheet whose cells are colored by value
+STATUS_COLUMNS_TO_COLOR = {"Issue Status", "MAP Status"}
+
+# Status values matched exactly (case-insensitive) → RED
+STATUS_RED_VALUES = {
+    "past due",
+    "pending map owner approval",
+}
+
+# Status value prefixes matched case-insensitively (the "*" denotes any
+# suffix, e.g. "Pending CRM Approval" or "Pending CRM Review") → YELLOW
+STATUS_YELLOW_PREFIXES = (
+    "pending crm",
+    "pending risk officer",
+    "audit validation",
+)
+
 # ─────────────────────────────────────────────────────────────────────────────
 # STYLE CONSTANTS
 # ─────────────────────────────────────────────────────────────────────────────
@@ -229,6 +246,8 @@ _BOLD_FONT = Font(name="Calibri", bold=True, size=11)
 _TITLE_FONT = Font(name="Calibri", bold=True, size=13)
 _COMPLIANT_FILL = PatternFill(start_color="C6EFCE", end_color="C6EFCE", fill_type="solid")
 _NONCOMPLIANT_FILL = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")
+_STATUS_RED_FILL = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")
+_STATUS_YELLOW_FILL = PatternFill(start_color="FFEB9C", end_color="FFEB9C", fill_type="solid")
 _THIN_BORDER = Border(
     left=Side(style="thin"),
     right=Side(style="thin"),
@@ -614,6 +633,32 @@ def _color_compliance_column(ws, compliance_col_idx: int) -> None:
                 cell.fill = _NONCOMPLIANT_FILL
 
 
+def _status_fill(value) -> PatternFill | None:
+    """Return the fill for a status value, or None if it doesn't match a rule."""
+    if value is None:
+        return None
+    text = str(value).strip().lower()
+    if not text:
+        return None
+    if text in STATUS_RED_VALUES:
+        return _STATUS_RED_FILL
+    if text.startswith(STATUS_YELLOW_PREFIXES):
+        return _STATUS_YELLOW_FILL
+    return None
+
+
+def _color_status_columns(ws, columns: list[str]) -> None:
+    """Apply red/yellow fill to Issue Status and MAP Status cells based on their value."""
+    for col_idx, col_name in enumerate(columns, start=1):
+        if col_name not in STATUS_COLUMNS_TO_COLOR:
+            continue
+        for row in ws.iter_rows(min_row=2, max_row=ws.max_row, min_col=col_idx, max_col=col_idx):
+            for cell in row:
+                fill = _status_fill(cell.value)
+                if fill:
+                    cell.fill = fill
+
+
 def _write_summary_sheet(
     ws,
     bu_df: pd.DataFrame,
@@ -691,6 +736,7 @@ def write_workbook(
     ws_issues = wb.create_sheet("Issues & MAPs")
     issues_display_cols = [c for c in ISSUES_AND_MAPS_COLUMNS if c in bu_df.columns]
     _write_df_to_sheet(ws_issues, bu_df[issues_display_cols], date_cols=DATE_COLUMNS)
+    _color_status_columns(ws_issues, issues_display_cols)
 
     # ── Sheet 2: MAPs Compliance Sheet ──────────────────────────────────────
     ws_compliance = wb.create_sheet("MAP Compliance")
