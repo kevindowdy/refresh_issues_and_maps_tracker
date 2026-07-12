@@ -212,11 +212,12 @@ COMPLIANCE_DISPLAY_COLUMNS = [
 
 # Date columns — formatted as MM/DD/YYYY in the output sheets
 DATE_COLUMNS = {
-    "issue date opened",
+    "Issue Date Opened",
     "Issue Due Date",
-    "MAP opened date",
+    "MAP Date Opened",
     "MAP Due Date",
     "Last Updated Date",
+    "If MAP is Past Due, ETA?",
 }
 
 # Columns in the "Issues & MAPs" sheet whose cells are colored by value
