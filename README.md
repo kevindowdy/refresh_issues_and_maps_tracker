@@ -45,4 +45,4 @@ For each business unit, the script generates an Excel workbook with the followin
 
 1. `Issues and MAPs Sheet` - Detailed Issue and MAP records requiring discussion
 2. `MAPs Compliance Sheet` - Open and past-due MAPs only. Includes compliance calculations and update metrics and color-coded compliance indicators (green/red)
-3. `Summary Sheet` - Executive-level overview including: _Total MAP counts_, _Open/Past Due volume_, _Compliance counts and percentages_
+3. `Summary Sheet` - Executive-level overview including: _Total MAP counts_, _Open/Past Due volume_, _Compliance counts and percentages_, _Total Open MAPs by Assessment Source Owner (ASO)_
