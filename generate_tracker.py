@@ -577,6 +577,23 @@ def generate_map_compliance_data(bu_df: pd.DataFrame) -> pd.DataFrame:
     )
     return compliance_df
 
+
+def get_open_maps_by_aso(
+    compliance_df: pd.DataFrame,
+    aso_col: str = "Issue Assessment Source Owner",
+) -> pd.Series:
+    """
+    Count open/past-due MAPs grouped by Assessment Source Owner (ASO).
+    Returns a Series indexed by ASO name, sorted alphabetically. Blank/missing
+    ASO values are grouped under "Unspecified".
+    """
+    if aso_col not in compliance_df.columns or compliance_df.empty:
+        return pd.Series(dtype=int)
+
+    aso = compliance_df[aso_col].fillna("").astype(str).str.strip()
+    aso = aso.replace("", "Unspecified")
+    return aso.value_counts().sort_index()
+
 # ─────────────────────────────────────────────────────────────────────────────
 # WORKBOOK WRITING HELPERS
 # ─────────────────────────────────────────────────────────────────────────────
@@ -727,6 +744,29 @@ def _write_summary_sheet(
             val.fill = _NONCOMPLIANT_FILL
         elif label == "% Compliant" and n_compliant > 0:
             val.fill = _COMPLIANT_FILL
+
+    # Total Open MAPs by ASO (Assessment Source Owner)
+    aso_counts = get_open_maps_by_aso(bu_df)
+    section_row = i + 2
+    header_cell = ws.cell(row=section_row, column=1, value="Total Open MAPs by ASO")
+    header_cell.font = _BOLD_FONT
+    header_cell.border = _THIN_BORDER
+    ws.cell(row=section_row, column=2).border = _THIN_BORDER
+
+    if aso_counts.empty:
+        note_cell = ws.cell(row=section_row + 1, column=1, value="No open MAPs")
+        note_cell.font = _BODY_FONT
+        note_cell.border = _THIN_BORDER
+        ws.cell(row=section_row + 1, column=2).border = _THIN_BORDER
+    else:
+        for offset, (aso_name, count) in enumerate(aso_counts.items(), start=1):
+            row_idx = section_row + offset
+            lbl = ws.cell(row=row_idx, column=1, value=aso_name)
+            val = ws.cell(row=row_idx, column=2, value=int(count))
+            lbl.font = _BODY_FONT
+            val.font = _BODY_FONT
+            lbl.border = _THIN_BORDER
+            val.border = _THIN_BORDER
 
     ws.column_dimensions["A"].width = 32
     ws.column_dimensions["B"].width = 20
