@@ -746,7 +746,7 @@ def _write_summary_sheet(
             val.fill = _COMPLIANT_FILL
 
     # Total Open MAPs by ASO (Assessment Source Owner)
-    aso_counts = get_open_maps_by_aso(compliance_df)
+    aso_counts = get_open_maps_by_aso(bu_df)
     section_row = i + 2
     header_cell = ws.cell(row=section_row, column=1, value="Total Open MAPs by ASO")
     header_cell.font = _BOLD_FONT
